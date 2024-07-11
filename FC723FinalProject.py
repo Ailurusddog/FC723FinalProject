@@ -1,43 +1,85 @@
+import random
+import string
+
+
 class SeatBooking:
     def __init__(self):
-        # Initialize the seating chart with all seats marked as "Free" (F)
         self.seats = [['F' for _ in range(80)] for _ in range(7)]
         self.column_map = {'A': 0, 'B': 1, 'C': 2, 'X': 3, 'D': 4, 'E': 5, 'F': 6}
         self.setup_special_seats()
+        self.bookings = {}
+        self.existing_references = set()
 
     def setup_special_seats(self):
-        # Set up aisles (X) and storage areas (S) in the seating chart
         for i in range(80):
-            self.seats[3][i] = 'X'  # Mark the entire 4th column as an aisle
+            self.seats[3][i] = 'X'
         for i in range(77, 80):
             for j in range(4, 7):
-                self.seats[j][i] = 'S'  # Mark the last three rows of columns D, E, F as storage areas
+                self.seats[j][i] = 'S'
+
+    def generate_booking_reference(self):
+        """
+        Generates a unique 8-character alphanumeric booking reference.
+        The function continuously generates random booking references until a unique one is found,
+        i.e., one that is not already in the set of existing references. It ensures the uniqueness
+        by checking the generated reference against the existing ones.
+        Returns:
+            str: A unique 8-character alphanumeric booking reference.
+        """
+        while True:
+            # Generate a random 8-character alphanumeric string
+            reference = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+            # Check if the generated reference is unique
+            if reference not in self.existing_references:
+                # If unique, add it to the set of existing references
+                self.existing_references.add(reference)
+                return reference
 
     def check_availability(self, row, col):
-        # Check if the seat at the specified row and column is free
         col_index = self.column_map.get(col)
         if col_index is not None and col != 'X':
             return self.seats[col_index][row] == 'F'
         return False
 
-    def book_seat(self, row, col):
-        # Book the seat if it is available
+    def book_seat(self, row, col, passport_number, first_name, last_name):
+        """
+        Books a seat if it is available and stores the booking reference and customer details.
+        Args:
+            row (int): The row number of the seat (0-indexed).
+            col (str): The column letter of the seat (A-F).
+            passport_number (str): The passport number of the customer.
+            first_name (str): The first name of the customer.
+            last_name (str): The last name of the customer.
+        Returns:
+            str or None: The booking reference if the seat is successfully booked, else None.
+        """
         col_index = self.column_map.get(col)
         if col_index is not None and col != 'X' and self.check_availability(row, col):
-            self.seats[col_index][row] = 'R'  # Mark the seat as "Reserved" (R)
-            return True
-        return False
+            reference = self.generate_booking_reference()
+            self.seats[col_index][row] = reference
+            self.bookings[reference] = {
+                'passport_number': passport_number,
+                'first_name': first_name,
+                'last_name': last_name,
+                'row': row,
+                'col': col
+            }
+            return reference
+        return None
 
     def free_seat(self, row, col):
-        # Free the seat if it is currently reserved
         col_index = self.column_map.get(col)
-        if col_index is not None and col != 'X' and self.seats[col_index][row] == 'R':
-            self.seats[col_index][row] = 'F'  # Mark the seat as "Free" (F)
-            return True
+        if col_index is not None and col != 'X':
+            reference = self.seats[col_index][row]
+            if reference not in ['F', 'S', 'X']:
+                self.seats[col_index][row] = 'F'
+                del self.bookings[reference]
+                self.existing_references.remove(reference)
+                return True
         return False
 
     def show_booking_state(self):
-        # Display the current booking state of all seats
         for i in range(80):
             for j in range(7):
                 print(self.seats[j][i], end=' ')
@@ -55,9 +97,7 @@ class SeatBooking:
             if choice == '1':
                 row = int(input("Enter row number: ")) - 1
                 col = input("Enter column letter (A-F): ").upper()
-                if col == 'X':
-                    print("This is an aisle, please enter A-F.")
-                elif col not in self.column_map:
+                if col not in self.column_map or col == 'X':
                     print("Invalid column letter.")
                 elif self.check_availability(row, col):
                     print("Seat is available")
@@ -66,20 +106,21 @@ class SeatBooking:
             elif choice == '2':
                 row = int(input("Enter row number: ")) - 1
                 col = input("Enter column letter (A-F): ").upper()
-                if col == 'X':
-                    print("This is an aisle, please enter A-F.")
-                elif col not in self.column_map:
+                passport_number = input("Enter passport number: ")
+                first_name = input("Enter first name: ")
+                last_name = input("Enter last name: ")
+                if col not in self.column_map or col == 'X':
                     print("Invalid column letter.")
-                elif self.book_seat(row, col):
-                    print("Seat successfully booked")
                 else:
-                    print("Seat is unavailable or invalid")
+                    reference = self.book_seat(row, col, passport_number, first_name, last_name)
+                    if reference:
+                        print(f"Seat successfully booked. Booking reference: {reference}")
+                    else:
+                        print("Seat is unavailable or invalid")
             elif choice == '3':
                 row = int(input("Enter row number: ")) - 1
                 col = input("Enter column letter (A-F): ").upper()
-                if col == 'X':
-                    print("This is an aisle, please enter A-F.")
-                elif col not in self.column_map:
+                if col not in self.column_map or col == 'X':
                     print("Invalid column letter.")
                 elif self.free_seat(row, col):
                     print("Seat successfully freed")
@@ -91,6 +132,7 @@ class SeatBooking:
                 break
             else:
                 print("Invalid option, please try again")
+
 
 # Run the program
 seat_booking = SeatBooking()
