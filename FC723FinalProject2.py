@@ -13,7 +13,7 @@ class SeatBooking:
         for i in range(80):
             self.seats[3][i] = 'X'  # Mark the entire 4th column as an aisle
         # The last three rows of columns D, E, F (indexes 4, 5, 6) are marked as storage areas
-        for i in range(77, 80):
+        for i in range(77, 78):
             for j in range(4, 7):
                 self.seats[j][i] = 'S'  # Mark the last three rows of columns D, E, F as storage areas
 
