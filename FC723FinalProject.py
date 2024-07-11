@@ -18,7 +18,7 @@ class SeatBooking:
         for i in range(80):
             self.seats[3][i] = 'X'
         # Mark the last three rows of columns D, E, F as storage areas (S)
-        for i in range(77, 80):
+        for i in range(77, 78):
             for j in range(4, 7):
                 self.seats[j][i] = 'S'
 
